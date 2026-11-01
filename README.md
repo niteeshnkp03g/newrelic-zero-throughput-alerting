@@ -1,334 +1,113 @@
-# 🚨 New Relic Zero-Throughput Alerting
+# New Relic Zero Throughput Alerting
 
-Python · AWS Lambda · New Relic · API Gateway · Slack · Monitoring
+## Overview
 
-## 📌 Overview
+This project implements a zero-throughput alerting solution using New Relic, AWS API Gateway, AWS Lambda, and Slack.
 
-This project implements an automated **Service-Based API Zero-Throughput Monitoring and Alerting solution** using New Relic, AWS Lambda, API Gateway, and Slack.
+The solution detects when a monitored application or transaction experiences zero throughput and sends alert notifications to Slack through an automated workflow.
 
-The solution monitors API transaction activity and identifies zero-throughput conditions when configured APIs stop receiving transactions.
+AWS Lambda processes incoming webhook events, manages the configured New Relic alert-policy mute/unmute logic, and handles Slack notifications.
 
-When a zero-throughput condition is detected, New Relic triggers an alert and sends incident information through a configured workflow to AWS API Gateway. AWS Lambda processes the incoming webhook, evaluates alert priority and mute schedules, formats the incident details, and delivers notifications to Slack.
-
-The solution supports both **Critical (Open)** and **Resolved (Closed)** notifications, providing complete incident lifecycle visibility.
-
-It also supports automated alert policy management based on configurable priority-based mute schedules.
+The project also supports priority-based policy management for P1, P2, P3, and P4 alert categories.
 
 ## Technologies Used
 
-- New Relic APM
-- NRQL Alert Conditions
-- New Relic Alert Policies
-- New Relic Workflows
-- AWS Lambda
-- AWS API Gateway
-- Amazon EventBridge Scheduler
-- Python
-- Slack Webhooks
-- Monitoring & Observability
+- **New Relic:** APM monitoring, NRQL alert conditions, and alert workflows.
+- **AWS API Gateway:** Receives webhook requests from New Relic and forwards them to Lambda.
+- **AWS Lambda:** Processes webhook events, applies policy mute/unmute logic, and handles notifications.
+- **Python:** Lambda application logic.
+- **Slack:** Receives alert and resolution notifications.
 
----
+## Architecture
 
-## 🏗️ Architecture
+The solution follows this flow:
+
+1. New Relic monitors application throughput.
+2. A zero-throughput condition triggers a New Relic alert.
+3. The New Relic workflow sends a webhook request to AWS API Gateway.
+4. API Gateway forwards the request to AWS Lambda.
+5. Lambda processes the incoming event and applies the configured policy logic.
+6. Lambda interacts with the New Relic API when policy updates are required.
+7. Alert notifications are sent to Slack.
 
 ### Architecture Diagram
 
 ![Zero Throughput Alerting Architecture](assets/architecture-diagram.png)
 
-### Architecture Overview
+## Table of Contents
 
-1. New Relic collects API transaction data.
-2. NRQL-based alert conditions identify zero-throughput situations.
-3. Alert policies classify incidents according to priority.
-4. New Relic Workflows send webhook notifications.
-5. AWS API Gateway receives webhook requests.
-6. AWS Lambda validates and processes incident details.
-7. Lambda evaluates configured mute rules and formats notifications.
-8. Slack receives Critical and Resolved notifications.
-9. EventBridge Scheduler triggers periodic alert policy synchronization.
+- [Features](#features)
+- [Repository Structure](#repository-structure)
+- [Lambda Processing Flow](#lambda-processing-flow)
+- [Priority Classification](#priority-classification)
+- [Policy Mute and Unmute Logic](#policy-mute-and-unmute-logic)
+- [New Relic Workflow Payload](#new-relic-workflow-payload)
+- [Environment Variables](#environment-variables)
+- [Setup Guide](#setup-guide)
+- [Testing](#testing)
+- [Troubleshooting](#troubleshooting)
+- [Future Enhancements](#future-enhancements)
+- [Resume Project Description](#resume-project-description)
 
-## 📚 Table of Contents
+## Features
 
-- Overview
-- Architecture
-- Features
-- Repository Structure
-- Screenshots
-- Zero-Throughput Detection
-- Environment Variables
-- Setup Guide
-- Workflow Payload
-- Lambda Processing
-- Policy Classification
-- Incident Lifecycle
-- Testing
-- Troubleshooting
-- Future Enhancements
-- Resume Project Description
+- Zero-throughput monitoring using New Relic.
+- NRQL-based alert conditions.
+- New Relic workflow integration with AWS API Gateway.
+- Webhook processing through AWS Lambda.
+- Priority-based alert-policy management (P1–P4).
+- Lambda-based policy mute/unmute logic.
+- Slack notifications for alert and resolution events.
+- IST timezone handling for configured policy windows.
+- Centralized alert processing and policy management.
 
----
-
-## ✨ Features
-
-✅ Service-Based API Monitoring
-
-✅ Zero-Throughput Detection
-
-✅ Automated Incident Detection
-
-✅ Priority-Based Alert Classification (P1–P4)
-
-✅ Critical / Open Incident Notifications
-
-✅ Resolved / Closed Incident Notifications
-
-✅ Complete Incident Lifecycle Tracking
-
-✅ Slack Alerting Integration
-
-✅ New Relic Workflow Integration
-
-✅ AWS Lambda Webhook Processing
-
-✅ API Gateway Integration
-
-✅ Automated Policy Mute / Unmute Scheduling
-
-✅ EventBridge Scheduler Integration
-
-✅ UTC to IST Timestamp Conversion
-
-✅ Production-Oriented Alert Automation
-
----
-
-## 📂 Repository Structure
+## Repository Structure
 
 ```text
 newrelic-zero-throughput-alerting/
 │
 ├── README.md
 │
-├── .gitignore
-├── .env.example
-├── requirements.txt
-│
-├── assets
+├── assets/
 │   ├── architecture-diagram.png
 │   ├── lambda-processing-flow.png
 │   └── policy-mute-schedule.png
 │
-├── docs
+├── docs/
 │   ├── architecture.md
 │   ├── policy-mute-schedule.md
 │   ├── setup-guide.md
 │   ├── troubleshooting.md
 │   └── workflow-payload.md
 │
-├── lambda
+├── lambda/
 │   └── lambda_function.py
 │
-└── screenshots
+└── screenshots/
 ```
 
----
-
-## 📸 Architecture & Workflow Diagrams
-
-### 1️⃣ End-to-End Architecture
-
-Illustrates the complete monitoring and alerting workflow, from API monitoring to notification delivery.
-
-![Architecture Diagram](assets/architecture-diagram.png)
-
-### 2️⃣ AWS Lambda Processing Flow
-
-Illustrates how Lambda receives webhook and scheduled events, validates payloads, checks mute rules, formats notifications, and manages alert policies.
-
-![Lambda Processing Flow](assets/lambda-processing-flow.png)
-
-### 3️⃣ Policy Classification and Mute Schedule
-
-Illustrates priority-based alert classification and the concept of configurable mute and active windows.
-
-![Policy Mute Schedule](assets/policy-mute-schedule.png)
-
----
-
-## 📈 Zero-Throughput Detection
-
-The solution uses New Relic monitoring and NRQL-based alert conditions to identify APIs with no observed transaction activity.
-
-Example NRQL query for transaction activity:
-
-```sql
-SELECT count(*)
-FROM Transaction
-WHERE appName = 'sample-service'
-```
-
-This query provides a basic view of transaction volume.
-
-**Important:** Zero-throughput detection must be configured using the appropriate New Relic alert condition and signal-loss settings for the monitored API. A zero count from a query alone should not be treated as proof that an alert will trigger. Configure and validate the actual detection window and signal-loss behavior in New Relic.
-
----
-
-## 🔐 Environment Variables
-
-The Lambda implementation uses configuration values to communicate with New Relic and Slack.
-
-| Variable | Description |
-|---|---|
-| NEW_RELIC_API_KEY | New Relic API authentication key |
-| NR_ACCOUNT_ID / ACCOUNT_ID | New Relic account identifier; use the name expected by the deployed code |
-| POLICY_IDS | Configured alert policy identifiers, if used |
-| SLACK_WEBHOOK | Slack incoming webhook URL |
-
-Example:
-
-```env
-NEW_RELIC_API_KEY=your_new_relic_api_key
-NR_ACCOUNT_ID=your_new_relic_account_id
-POLICY_IDS=your_policy_ids
-SLACK_WEBHOOK=your_slack_webhook_url
-```
-
-> Configuration names must match the actual deployed Lambda implementation. Never commit real credentials, webhook URLs, account identifiers, or production policy IDs.
-
----
-
-## ⚙️ Setup Guide
-
-This section describes the main components of the solution. Actual production configuration should be documented separately and kept private.
-
-### Step 1 – Configure Notification Channel
-
-Create a dedicated notification channel in your chat platform.
-
-Configure an incoming webhook for message delivery.
-
-### Step 2 – Configure New Relic Alert Policies
-
-Navigate to:
-
-```text
-Alerts & AI
-    → Alert Policies
-```
-
-Create and configure alert policies according to service and API criticality.
-
-### Step 3 – Configure Zero-Throughput Detection
-
-Navigate to:
-
-```text
-Alerts & AI
-    → Alert Conditions
-```
-
-Configure the required NRQL alert conditions and signal-loss behavior for the APIs being monitored.
-
-Validate the detection behavior using non-production test traffic.
-
-### Step 4 – Configure Webhook Destination
-
-Configure a webhook destination using the API Gateway endpoint.
-
-### Step 5 – Configure New Relic Workflow
-
-Associate the relevant alert policies with the configured webhook destination.
-
-Configure the payload to include the required incident information.
-
-### Step 6 – Deploy AWS Lambda
-
-Deploy the Python Lambda function and configure the required environment variables.
-
-Ensure the Lambda execution role has the permissions required by the implementation.
-
-### Step 7 – Configure API Gateway
-
-Create an HTTP API endpoint.
-
-Configure:
-
-- Method: POST
-- Integration: AWS Lambda
-- Route: Configured webhook route
-
-Verify that API Gateway can invoke the Lambda function.
-
-### Step 8 – Configure EventBridge Scheduler
-
-Configure scheduled execution for alert policy synchronization.
-
-Validate the schedule and policy-management behavior in a test environment before using it in production.
-
----
-
-## 📦 Workflow Payload
-
-New Relic Workflow sends incident details to the configured webhook endpoint.
-
-Example generic payload structure:
-
-```json
-{
-  "text": "{{#if closedAt}}RESOLVED - Throughput Restored{{else}}CRITICAL - Zero Throughput Detected{{/if}}",
-  "attachments": [
-    {
-      "fields": [
-        {
-          "title": "Entity Details",
-          "value": "{{escape accumulations.metadata_entity_name.[0]}}"
-        },
-        {
-          "title": "Transaction Name",
-          "value": "{{escape accumulations.targetName.[0]}}"
-        },
-        {
-          "title": "Opened",
-          "value": "{{issueCreatedAt}}"
-        },
-        {
-          "title": "Ongoing",
-          "value": "{{#if closedAt}}{{issueClosedAt}}{{else}}Still Open{{/if}}"
-        }
-      ]
-    }
-  ]
-}
-```
-
-The actual payload depends on the New Relic Workflow configuration and the fields available in the incident event.
-
----
-
-## ⚡ Lambda Processing
-
-The AWS Lambda function performs the following operations:
-
-1. Receives incoming webhook or scheduled events.
-2. Identifies the event type.
-3. Validates incoming alert payloads.
-4. Extracts incident and policy information.
-5. Determines the applicable priority.
-6. Checks whether the current time falls within a configured mute window.
-7. Manages alert policy enablement and disablement for scheduled events.
-8. Converts UTC timestamps to IST.
-9. Formats Critical and Resolved notification messages.
-10. Sends notifications through the configured Slack webhook.
+## Lambda Processing Flow
+
+AWS Lambda is responsible for processing incoming events and executing the configured application logic.
+
+The main processing responsibilities include:
+
+- Receiving webhook events forwarded by API Gateway.
+- Validating incoming alert payloads.
+- Extracting alert and policy information.
+- Identifying the applicable priority category.
+- Evaluating the configured mute/unmute conditions.
+- Updating New Relic alert policies through the New Relic API when required.
+- Formatting alert messages.
+- Sending notifications to Slack.
 
 ### Lambda Processing Diagram
 
-![Lambda Processing](assets/lambda-processing-flow.png)
+![Lambda Processing Flow](assets/lambda-processing-flow.png)
 
----
+## Priority Classification
 
-## 🎯 Policy Classification
-
-The alerting implementation uses four priority categories based on service criticality and API criticality.
+The solution uses four priority categories:
 
 | Priority | Service Criticality | API Criticality |
 |---|---|---|
@@ -337,186 +116,110 @@ The alerting implementation uses four priority categories based on service criti
 | P3 | Non-Critical | Critical |
 | P4 | Non-Critical | Non-Critical |
 
-### Mute Schedule Management
+The priority classification determines which alert policy is managed by the Lambda logic.
 
-- P1, P2, and P3 use configurable mute windows.
-- P4 remains continuously active.
-- EventBridge Scheduler triggers policy synchronization.
-- Lambda evaluates configured schedules and updates policy status through the New Relic API.
+## Policy Mute and Unmute Logic
 
-Actual production policy identifiers and internal schedules are intentionally excluded from this public repository documentation.
+The mute/unmute functionality is implemented inside AWS Lambda.
 
-![Policy Classification](assets/policy-mute-schedule.png)
+Lambda evaluates the configured policy rules and time windows and interacts with the New Relic API to enable or disable the applicable alert policies.
 
----
+The policy-management logic supports the P1, P2, P3, and P4 priority categories.
 
-## 🚨 Incident Lifecycle
+The configured time windows and policy behavior are documented here:
 
-The solution supports both alert opening and recovery notifications.
+[Policy Mute and Unmute Documentation](docs/policy-mute-schedule.md)
 
-### 1️⃣ Incident Opened
+**Note:** The policy-management logic runs when Lambda is invoked with the relevant event. This project documentation does not assume an EventBridge integration.
 
-```text
-Zero Throughput Detected
-          │
-          ▼
-New Relic Alert Triggered
-          │
-          ▼
-New Relic Workflow
-          │
-          ▼
-AWS API Gateway
-          │
-          ▼
-AWS Lambda Processing
-          │
-          ▼
-Mute Rule Evaluation
-          │
-          ▼
-Critical Notification to Slack
-```
+## New Relic Workflow Payload
 
-### 2️⃣ Incident Resolved
+New Relic workflows send alert information to the API Gateway endpoint.
 
-```text
-API Traffic Restored
-          │
-          ▼
-New Relic Incident Resolved
-          │
-          ▼
-New Relic Workflow
-          │
-          ▼
-AWS API Gateway
-          │
-          ▼
-AWS Lambda Processing
-          │
-          ▼
-Resolved Notification to Slack
-```
+The payload contains information used by Lambda to identify and process the alert, including:
 
-This provides visibility throughout the incident lifecycle, from zero-throughput detection to service recovery.
+- Alert status.
+- Policy information.
+- Entity details.
+- Transaction information.
+- Alert creation and resolution timestamps.
 
----
+See the complete payload documentation:
 
-## 🧪 Testing
+[New Relic Workflow Payload](docs/workflow-payload.md)
 
-Validate the complete workflow in a non-production environment.
+## Environment Variables
 
-### Test Webhook Processing
+Configure the Lambda environment variables according to the names used by the deployed Lambda code.
 
-Trigger a test notification from the configured New Relic Workflow.
+| Variable | Purpose |
+|---|---|
+| `SLACK_WEBHOOK` | Slack incoming webhook used for notifications |
+| `NEW_RELIC_API_KEY` | New Relic API key used for policy management |
+| `ACCOUNT_ID` | New Relic account identifier used by the Lambda code |
 
-Verify:
+**Security:** Never commit actual API keys, Slack webhook URLs, account identifiers, or policy IDs to a public GitHub repository. Use placeholders in examples.
 
-- API Gateway receives the request.
-- Lambda executes successfully.
-- Incoming payload is processed correctly.
-- Alert priority is identified correctly.
-- Mute-window logic behaves as expected.
-- Slack notification is delivered.
-- Incident state is correctly displayed.
+## Setup Guide
 
-### Test Recovery Notification
+Follow the detailed setup instructions in:
 
-Verify that a resolved incident generates the expected recovery notification.
+[Setup Guide](docs/setup-guide.md)
 
-### Test Scheduled Policy Management
+The setup documentation covers:
 
-Verify that scheduled events trigger policy synchronization and that policy states match the configured schedule.
+1. New Relic alert-condition configuration.
+2. New Relic workflow configuration.
+3. AWS API Gateway configuration.
+4. AWS Lambda deployment.
+5. Lambda environment configuration.
+6. API Gateway and Lambda integration.
+7. Slack notification configuration.
+8. Testing the webhook integration.
 
----
+## Testing
 
-## 🛠️ Troubleshooting
+Validate the solution using non-production test data before making changes to any production alert policies.
 
-### Slack Notification Not Received
+Recommended checks:
 
-Verify:
+- Verify that the New Relic alert condition detects zero throughput.
+- Verify that the New Relic workflow sends the webhook.
+- Verify that API Gateway receives the request.
+- Verify that Lambda processes the incoming payload.
+- Verify that the configured policy logic behaves as expected.
+- Verify that Slack receives the notification.
+- Verify alert resolution handling.
 
+## Troubleshooting
+
+For common issues and debugging steps, refer to:
+
+[Troubleshooting Guide](docs/troubleshooting.md)
+
+Common areas to investigate include:
+
+- New Relic workflow webhook configuration.
+- API Gateway endpoint and integration.
+- Lambda execution errors and CloudWatch logs.
+- Lambda environment variables.
+- New Relic API authentication and permissions.
 - Slack webhook configuration.
-- Lambda execution logs.
-- API Gateway integration.
-- New Relic Workflow configuration.
-- Lambda network connectivity.
+- Alert payload format and policy mapping.
 
-### Workflow Not Triggering
+## Future Enhancements
 
-Verify:
+- Add more detailed alert-processing metrics.
+- Improve error handling and retry mechanisms.
+- Add automated testing for webhook payloads.
+- Improve notification formatting.
+- Extend support for additional alert categories.
 
-- Alert condition configuration.
-- Workflow activation.
-- Policy association.
-- Webhook destination configuration.
-- Signal-loss settings.
+## Resume Project Description
 
-### Lambda Errors
+**New Relic Zero Throughput Alerting Automation**
 
-Check:
-
-- Amazon CloudWatch Logs.
-- Lambda execution role.
-- Environment variable configuration.
-- New Relic API response.
-- API Gateway integration.
-
-### Incorrect Incident State
-
-Verify:
-
-- Incoming webhook payload.
-- Open and resolved event fields.
-- Incident timestamps.
-- Lambda alert-state detection logic.
-
-### Incorrect Policy Scheduling
-
-Verify:
-
-- EventBridge Scheduler configuration.
-- Lambda scheduled-event handling.
-- Configured mute windows.
-- New Relic API permissions.
-- Policy update responses.
-
----
-
-## 🚀 Future Enhancements
-
-- Microsoft Teams Integration
-- Email Notifications
-- PagerDuty Integration
-- ServiceNow Integration
-- Monitoring Dashboard Automation
-- Alert Analytics and Reporting
-- Multi-Region Monitoring
-- Automated Incident Remediation
-- Advanced Alert Correlation
-
----
-
-## 💼 Resume Project Description
-
-**New Relic Service-Based API Zero-Throughput Monitoring & Alert Automation**
-
-Designed and implemented an automated API zero-throughput monitoring and alerting solution using New Relic, NRQL, AWS Lambda, API Gateway, EventBridge Scheduler, and Slack. Implemented priority-based alert classification, automated policy mute/unmute scheduling, webhook-based incident processing, and Critical/Resolved notifications. Improved operational visibility into API traffic interruptions and supported faster incident detection and recovery.
-
-### Technologies Used
-
-- New Relic APM
-- NRQL
-- AWS Lambda
-- AWS API Gateway
-- Amazon EventBridge Scheduler
-- Python
-- Slack Webhooks
-- Monitoring & Observability
-- Incident Management
-- Alert Automation
-
----
-
-⭐ If you found this project useful, consider giving it a star.
+- Implemented a zero-throughput alerting solution using New Relic APM, NRQL alert conditions, AWS API Gateway, AWS Lambda, and Slack.
+- Integrated New Relic alert workflows with AWS Lambda through API Gateway for automated webhook processing.
+- Developed Python-based Lambda logic to process alert events and manage priority-based New Relic policy mute/unmute operations.
+- Integrated Slack notifications to communicate alert and resolution events.
